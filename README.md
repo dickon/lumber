@@ -54,7 +54,9 @@ Dependencies
 ============
 
  * python (developed on Python 2.6)
- * dulwich from http://www.samba.org/~jelmer/dulwich/
+ * dulwich from http://www.samba.org/~jelmer/dulwich/. Developed against 0.8.5 
+   though other versions might work.
+
 
 Ideas for future development
 ============================
