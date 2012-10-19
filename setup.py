@@ -11,4 +11,4 @@ setup(name='Lumber',
       long_description=open('README.md').read(),
       description='Work out unpulled and unpushed commits '
       'across local copies of a set of git repositories.',
-      scripts=['bin/lumber-status'])
+      scripts=['bin/lumber-status', 'bin/lumber-do'])

@@ -33,5 +33,4 @@ def read_options():
                           action=action,
                           default=cdefault, metavar=metavar,
                           help=helptext + sectiontext)
-    options, args = parser.parse_args()
-    return options
+    return parser.parse_args()

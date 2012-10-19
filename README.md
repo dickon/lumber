@@ -27,6 +27,7 @@ Example output
                                toolstack unpulled=5
  
 
+   $ lumber-status -c /path/to/my/central/repos git pull
 
 Installation
 ============
@@ -56,11 +57,4 @@ Dependencies
  * python (developed on Python 2.6)
  * dulwich from http://www.samba.org/~jelmer/dulwich/. Developed against 0.8.5 
    though other versions might work.
-
-
-Ideas for future development
-============================
-
- * Add a lumber-do command which will run a git command in each repository,
-   e.g. "lumber-do pull"
 
