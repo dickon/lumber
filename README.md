@@ -28,6 +28,11 @@ Example output
  
 
 
+Installation
+============
+
+    sudo python setup.py install
+
 Configuration
 =============
 
