@@ -14,8 +14,6 @@ LOCAL_CHECKOUTS_DIRECTORY = CONFIG.get('paths', 'work')
 BRANCH = CONFIG.get('general', 'branch')
 LIMIT = CONFIG.getint('search', 'limit')
 VERBOSE = CONFIG.getboolean('search', 'verbose')
-repos = sorted(listdir(SOURCE_DIRECTORY))
-longest = max( *[len(repo) for repo in repos])
 
 def sigfigs(num, sig_figs):
     if num != 0:
@@ -52,41 +50,54 @@ def run_no_check(command, cwd=None):
     stdout, _ = process.communicate()
     return stdout
 
-for word in repos:
-    path = join(SOURCE_DIRECTORY, word)
-    lpath = join(LOCAL_CHECKOUTS_DIRECTORY, word[:-4])
+def scan_repo(repo, longest=32):
+    """Scan repository locally and remotely and return a summary string.
+
+    :param repo: name of remote repository including .git extension
+    :param longest: assume at most this many characaters in the repository
+    """
+    path = join(SOURCE_DIRECTORY, repo)
+    lpath = join(LOCAL_CHECKOUTS_DIRECTORY, repo[:-4])
     local = exists(lpath)
-    if not local or not word.endswith('.git'):
-        continue
+    if not local or not repo.endswith('.git'):
+        return
     central_repo = Repo(path)
     try:
         master = central_repo[central_repo.ref('refs/heads/'+BRANCH)]
     except KeyError:
-        continue
-    print pad(word[:-4], longest),
+        return
+    out = pad(repo[:-4], longest)+ ' '
     lrepo = Repo(lpath)
     lmaster = lrepo.ref('refs/heads/'+BRANCH)
     unpulled = search_back(central_repo, lambda x: x in lrepo, master.id)
     if not unpulled:
-        print '(up to date)',
+        out += '(up to date) '
     else:
-        print 'unpulled='+str(unpulled) + ('+' if unpulled == LIMIT else ''),
+        out += 'unpulled='+str(unpulled) + ('+' if unpulled == LIMIT else '') + ' '
     lindex = lrepo.open_index()
     difflines = len(run_no_check(['git', 'diff'], cwd=lpath).split('\n')) - 1
     if difflines:
-        print 'diff_lines=%d' % (difflines),
+        out += 'diff_lines=%d ' % (difflines)
     changes = list(lindex.changes_from_tree(lrepo.object_store, 
                                             lrepo['HEAD'].tree))
     
     if changes:
-        print 'staged_files=%d' % (len(changes)),
+        out += 'staged_files=%d ' % (len(changes))
     unpushed = search_back(lrepo, lambda x: x in central_repo, lmaster)
     if unpushed:
-        print 'unpushed='+str(unpushed),
-    print
+        out += 'unpushed='+str(unpushed)+ ' '
+    return out
 
+def main():
+    repos = sorted(listdir(SOURCE_DIRECTORY))
+    longest = max( *[len(repo) for repo in repos])
+    for repo in repos:
+        out = scan_repo(repo, longest)
+        if out:
+            print out
 
-
+if __name__ == '__main__':
+    main()
 
 
 
