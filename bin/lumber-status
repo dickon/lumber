@@ -6,7 +6,7 @@ from os.path import join, exists, split
 from sys import stderr
 from math import floor, log10
 from subprocess import Popen, PIPE
-from lumber.options import read_options
+from lumber import read_options
 
 def search_back(repo, predicate, start, limit=None):
     for depth, entry in enumerate(repo.get_walker(max_entries=limit,
