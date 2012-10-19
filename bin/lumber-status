@@ -1,12 +1,12 @@
 #! /usr/bin/env python
 
-from dulwich.repo import Repo, NotGitRepository
 from os import listdir, getcwd
 from os.path import join, exists, split
 from sys import stderr
 from math import floor, log10
 from subprocess import Popen, PIPE
-from lumber import read_options
+from lumber.options import read_options
+from lumber.traverse import traverse_local
 
 def search_back(repo, predicate, start, limit=None):
     for depth, entry in enumerate(repo.get_walker(max_entries=limit,
@@ -25,7 +25,7 @@ def run_no_check(command, cwd=None):
     stdout, _ = process.communicate()
     return stdout
 
-def scan_repo(branch, work_path, central_path, longest=32):
+def scan_repo(branch, work_repo, central_repo, longest=32):
     """Scan repository locally and remotely and return a summary string.
 
     :param branch: branch to consider
@@ -33,59 +33,43 @@ def scan_repo(branch, work_path, central_path, longest=32):
     :param central_path: path of central repository
     :param longest: assume at most this many characaters in the repository
     """
-    local = exists(work_path)
-    if not local:
-        return
-    try:
-        central_repo = Repo(central_path)
-    except NotGitRepository:
-        return
     try:
         master = central_repo[central_repo.ref('refs/heads/'+branch)]
     except KeyError:
         return
-    out = pad(split(work_path)[1], longest)+ ' '
-    lrepo = Repo(work_path)
-    lmaster = lrepo.ref('refs/heads/'+branch)
-    unpulled = search_back(central_repo, lambda x: x in lrepo, master.id,
+    out = pad(split(work_repo.path)[1], longest)+ ' '
+    lmaster = work_repo.ref('refs/heads/'+branch)
+    unpulled = search_back(central_repo, lambda x: x in work_repo, master.id,
                            limit=longest)
     if not unpulled:
         out += '(up to date) '
     else:
         out += 'unpulled='+str(unpulled) + ('+' if unpulled == longest 
                                             else '') + ' '
-    lindex = lrepo.open_index()
+    lindex = work_repo.open_index()
     difflines = len(run_no_check(['git', 'diff'], 
-                                 cwd=work_path).split('\n')) - 1
+                                 cwd=work_repo.path).split('\n')) - 1
     if difflines:
         out += 'diff_lines=%d ' % (difflines)
-    changes = list(lindex.changes_from_tree(lrepo.object_store, 
-                                            lrepo['HEAD'].tree))
+    changes = list(lindex.changes_from_tree(work_repo.object_store, 
+                                            work_repo['HEAD'].tree))
     
     if changes:
         out += 'staged_files=%d ' % (len(changes))
-    unpushed = search_back(lrepo, lambda x: x in central_repo, lmaster)
+    unpushed = search_back(work_repo, lambda x: x in central_repo, lmaster)
     if unpushed:
         out += 'unpushed='+str(unpushed)+ ' '
     return out
 
-def main():
-    """Entry point"""
-    options = read_options()
-    if options.central is None:
-        print >>stderr, 'ERROR: no central repository directory; configure with -c or config file'
-        exit(1)
-    repos = sorted(listdir(options.central))
-    longest = max( *[len(repo) for repo in repos])
-    for repo in repos:
-        out = scan_repo(options.branch,
-                        join(options.work, repo[:-4]),
-                        join(options.central, repo), longest)
-        if out:
-            print out
+options = read_options()
+if options.central is None:
+    print >>stderr, 'ERROR: no central repository directory; configure with -c or config file'
+    exit(1)
+for work_repo, central_repo in traverse_local(options.work, options.central):
+    out = scan_repo(options.branch, work_repo, central_repo, 40)
+    if out:
+        print out
 
-if __name__ == '__main__':
-    main()
 
 
 
