@@ -6,7 +6,7 @@ from os.path import join, exists, expanduser
 from time import strftime, gmtime, time, asctime, localtime
 from math import floor, log10
 from ConfigParser import RawConfigParser
-
+from subprocess import Popen, PIPE
 CONFIG = RawConfigParser()
 CONFIG.read(expanduser('~/.lumberrc'))
 SOURCE_DIRECTORY = CONFIG.get('paths', 'central')
@@ -52,7 +52,14 @@ def search_back(repo, predicate, start):
     return 'many'
 
 def pad(text, length):
+    """Pad text out to length using spaces on the left"""
     return (' '*max(0, length-len(text)))+text
+
+def run_no_check(command, cwd=None):
+    """Run command in cwd, return stdout. Ignore non-zero exit codes"""
+    process = Popen(command, cwd=cwd, stdout=PIPE)
+    stdout, _ = process.communicate()
+    return stdout
 
 for word in repos:
     path = join(SOURCE_DIRECTORY, word)
@@ -70,13 +77,22 @@ for word in repos:
     lmaster = lrepo.ref('refs/heads/'+BRANCH)
     unpulled = search_back(central_repo, lambda x: x in lrepo, master.id)
     if not unpulled:
-        print 'up to date',
+        print '(up to date)',
     else:
-        print 'unpulled', str(unpulled) + ('+' if unpulled == LIMIT else ''),
-        print 'most recent', age(time() - master.commit_time),
+        print 'unpulled='+str(unpulled) + ('+' if unpulled == LIMIT else ''),
+        #print 'most recent', age(time() - master.commit_time),
+    lindex = lrepo.open_index()
+    difflines = len(run_no_check(['git', 'diff'], cwd=lpath).split('\n')) - 1
+    if difflines:
+        print 'diff_lines=%d' % (difflines),
+    changes = list(lindex.changes_from_tree(lrepo.object_store, 
+                                            lrepo['HEAD'].tree))
+    
+    if changes:
+        print 'staged_files=%d' % (len(changes)),
     unpushed = search_back(lrepo, lambda x: x in central_repo, lmaster)
     if unpushed:
-        print 'unpushed', unpushed,
+        print 'unpushed='+str(unpushed),
     print
 
 

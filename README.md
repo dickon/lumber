@@ -7,20 +7,24 @@ repositories.
 Example output
 ==============
 
-                           build-scripts unpulled 9 most recent 7.3d ago
-                                    docs unpulled 72 most recent 3.1d ago unpushed 1
-                                  icbinn up to date
-                                     idl unpulled 3 most recent 21d ago
-                                   input unpulled 2 most recent 15d ago
-                               installer unpulled 8 most recent 1.2d ago
-                         linux-2.6.32-pq unpulled 1 most recent 15d ago
-                                 manager unpulled 146 most recent 10h ago
-                                 scripts up to date
-                          selinux-policy unpulled 43 most recent 5.3h ago
-                                sync-cli up to date
-                             sync-client up to date unpushed 1
-                           sync-database up to date
-                             sync-server up to date
+                                  blktap (up to date)
+                           build-scripts unpulled=9
+                                    docs unpulled=72
+                                  icbinn (up to date)
+                                     idl unpulled=3
+                                   input unpulled=2
+                               installer unpulled=8
+                         linux-2.6.32-pq unpulled=1
+                                 manager unpulled=146
+                                 scripts (up to date)
+                          selinux-policy unpulled=43
+                                sync-cli (up to date)
+                             sync-client (up to date) diff_lines=11 staged_files=1 unpushed=1
+                           sync-database (up to date)
+                             sync-server (up to date)
+                          toolstack-data unpulled=9
+                               toolstack unpulled=5
+                                     v4v (up to date)
  
 
 At the moment lumber takes no command line options and its working directory
