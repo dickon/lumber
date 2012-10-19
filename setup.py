@@ -6,6 +6,7 @@ setup(name='lumber',
       license='GPLv2',
       author='Dickon Reed',
       author_email='dickon@cantab.net',
+      requires=['dulwich'],
       long_description='Work out unpulled and unpushed commits '
       'across local copies of a set of git repositories.',
       scripts=['lumber-status'])
