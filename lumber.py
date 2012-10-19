@@ -27,15 +27,6 @@ def sigfigs(num, sig_figs):
     else:
         return 0  # Can't take the log of 0
 
-def age(seconds):
-    asec = abs(seconds)
-    pre = '-' if seconds < 0 else ''
-    for mult, post in [(60, 's'), (60, 'm'), (24, 'h'), (365, 'd'), (None, 'y')]:
-        if mult is None or asec < mult:
-            break
-        asec = asec / mult
-    return pre + sigfigs(asec,2) + post+ ' ago'
-
 def search_back(repo, predicate, start):
     if VERBOSE:
         print repo.path, 'iterate start at', start
@@ -80,7 +71,6 @@ for word in repos:
         print '(up to date)',
     else:
         print 'unpulled='+str(unpulled) + ('+' if unpulled == LIMIT else ''),
-        #print 'most recent', age(time() - master.commit_time),
     lindex = lrepo.open_index()
     difflines = len(run_no_check(['git', 'diff'], cwd=lpath).split('\n')) - 1
     if difflines:
