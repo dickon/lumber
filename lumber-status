@@ -90,7 +90,7 @@ def scan_repo(branch, work_path, central_path, longest=32):
 def read_options():
     """Read options"""
     config = RawConfigParser()
-    config.read(expanduser('~/.lumberrc2'))
+    config.read(expanduser('~/.lumberrc'))
     parser = OptionParser()
     for short, option, section, default, metavar, helptext in OPTIONS:
         sectiontext = ' Configure in ~/.lumberrc as %s in %s section.' % (

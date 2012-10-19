@@ -7,7 +7,7 @@ repositories.
 Example output
 ==============
 
-   $ lumber -c /path/to/my/central/repos 
+   $ lumber-status -c /path/to/my/central/repos 
 
                                   blktap (up to date)
                            build-scripts unpulled=9
@@ -33,7 +33,7 @@ Example output
 Configuration
 =============
 
-See lumber --help. There is support for a config file at ~/.lumberrc, such as:
+See lumber-status --help. There is support for a config file at ~/.lumberrc, such as:
 
     [paths]
     central = /my/project/central/git/repos
@@ -53,9 +53,5 @@ Dependencies
  * python (developed on Python 2.6)
  * dulwich from http://www.samba.org/~jelmer/dulwich/
 
-TODO
-====
 
- * write a setup.py
- * cope with missing fields from config file
 
