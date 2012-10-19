@@ -7,6 +7,8 @@ repositories.
 Example output
 ==============
 
+   $ lumber -c /path/to/my/central/repos 
+
                                   blktap (up to date)
                            build-scripts unpulled=9
                                     docs unpulled=72
@@ -27,13 +29,11 @@ Example output
                                      v4v (up to date)
  
 
-At the moment lumber takes no command line options and its working directory
-does not matter, but you need a configuration file.
 
 Configuration
 =============
 
-You need a ~/.lumberrc in INI file format, such as:
+See lumber --help. There is support for a config file at ~/.lumberrc, such as:
 
     [paths]
     central = /my/project/central/git/repos

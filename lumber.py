@@ -1,19 +1,20 @@
 #! /usr/bin/env python
 
-from dulwich.repo import Repo
-from os import listdir
-from os.path import join, exists, expanduser
-from time import strftime, gmtime, time, asctime, localtime
+from dulwich.repo import Repo, NotGitRepository
+from os import listdir, getcwd
+from os.path import join, exists, expanduser, split
+from sys import stderr
 from math import floor, log10
-from ConfigParser import RawConfigParser
+from ConfigParser import RawConfigParser, NoOptionError, NoSectionError
 from subprocess import Popen, PIPE
-CONFIG = RawConfigParser()
-CONFIG.read(expanduser('~/.lumberrc'))
-SOURCE_DIRECTORY = CONFIG.get('paths', 'central')
-LOCAL_CHECKOUTS_DIRECTORY = CONFIG.get('paths', 'work')
-BRANCH = CONFIG.get('general', 'branch')
-LIMIT = CONFIG.getint('search', 'limit')
-VERBOSE = CONFIG.getboolean('search', 'verbose')
+from optparse import OptionParser
+
+OPTIONS = [('w', 'work', 'paths', getcwd(), 'DIRECTORY',
+            """Work repositories are in DIRECTORY."""),
+           ('c', 'central', 'paths', None, 'DIRECTORY',
+            """Central repositories are in DIRECTORY."""),
+           ('b', 'branch', 'general', 'master', 'BRANCH', 'Look at BRANCH.'),
+           ('v', 'verbose', 'general', False, 'BOOLEAN', 'Show debug output.')]
 
 def sigfigs(num, sig_figs):
     if num != 0:
@@ -25,19 +26,11 @@ def sigfigs(num, sig_figs):
     else:
         return 0  # Can't take the log of 0
 
-def search_back(repo, predicate, start):
-    if VERBOSE:
-        print repo.path, 'iterate start at', start
-    for depth, entry in enumerate(repo.get_walker(max_entries=LIMIT,
+def search_back(repo, predicate, start, limit=None):
+    for depth, entry in enumerate(repo.get_walker(max_entries=limit,
                                                   include=[start])):
-        if VERBOSE:
-            print repo.path, depth, 'at', entry.commit.id[:8]
         if predicate(entry.commit.id):
-            if VERBOSE:
-                print repo.path, entry.commit.id[:8], 'accepted'
             return depth
-    if VERBOSE:
-        print repo.path, 'iteration stopped'
     return 'many'
 
 def pad(text, length):
@@ -50,32 +43,38 @@ def run_no_check(command, cwd=None):
     stdout, _ = process.communicate()
     return stdout
 
-def scan_repo(repo, longest=32):
+def scan_repo(branch, work_path, central_path, longest=32):
     """Scan repository locally and remotely and return a summary string.
 
-    :param repo: name of remote repository including .git extension
+    :param branch: branch to consider
+    :param work_path: path of work repository
+    :param central_path: path of central repository
     :param longest: assume at most this many characaters in the repository
     """
-    path = join(SOURCE_DIRECTORY, repo)
-    lpath = join(LOCAL_CHECKOUTS_DIRECTORY, repo[:-4])
-    local = exists(lpath)
-    if not local or not repo.endswith('.git'):
+    local = exists(work_path)
+    if not local:
         return
-    central_repo = Repo(path)
     try:
-        master = central_repo[central_repo.ref('refs/heads/'+BRANCH)]
+        central_repo = Repo(central_path)
+    except NotGitRepository:
+        return
+    try:
+        master = central_repo[central_repo.ref('refs/heads/'+branch)]
     except KeyError:
         return
-    out = pad(repo[:-4], longest)+ ' '
-    lrepo = Repo(lpath)
-    lmaster = lrepo.ref('refs/heads/'+BRANCH)
-    unpulled = search_back(central_repo, lambda x: x in lrepo, master.id)
+    out = pad(split(work_path)[1], longest)+ ' '
+    lrepo = Repo(work_path)
+    lmaster = lrepo.ref('refs/heads/'+branch)
+    unpulled = search_back(central_repo, lambda x: x in lrepo, master.id,
+                           limit=longest)
     if not unpulled:
         out += '(up to date) '
     else:
-        out += 'unpulled='+str(unpulled) + ('+' if unpulled == LIMIT else '') + ' '
+        out += 'unpulled='+str(unpulled) + ('+' if unpulled == longest 
+                                            else '') + ' '
     lindex = lrepo.open_index()
-    difflines = len(run_no_check(['git', 'diff'], cwd=lpath).split('\n')) - 1
+    difflines = len(run_no_check(['git', 'diff'], 
+                                 cwd=work_path).split('\n')) - 1
     if difflines:
         out += 'diff_lines=%d ' % (difflines)
     changes = list(lindex.changes_from_tree(lrepo.object_store, 
@@ -88,11 +87,42 @@ def scan_repo(repo, longest=32):
         out += 'unpushed='+str(unpushed)+ ' '
     return out
 
+def read_options():
+    """Read options"""
+    config = RawConfigParser()
+    config.read(expanduser('~/.lumberrc2'))
+    parser = OptionParser()
+    for short, option, section, default, metavar, helptext in OPTIONS:
+        sectiontext = ' Configure in ~/.lumberrc as %s in %s section.' % (
+            option, section)
+        try:
+            if type(default) == type(True):
+                action = 'store_true'
+                cdefault = config.getboolean(section, option)
+            else:
+                action = 'store'
+                cdefault = config.get(section, option)
+        except (NoOptionError, NoSectionError):
+            cdefault = default
+        parser.add_option('-'+short, '--'+option, dest=option,
+                          action=action,
+                          default=cdefault, metavar=metavar,
+                          help=helptext + sectiontext)
+    options, args = parser.parse_args()
+    return options
+
 def main():
-    repos = sorted(listdir(SOURCE_DIRECTORY))
+    """Entry point"""
+    options = read_options()
+    if options.central is None:
+        print >>stderr, 'ERROR: no central repository directory; configure with -c or config file'
+        exit(1)
+    repos = sorted(listdir(options.central))
     longest = max( *[len(repo) for repo in repos])
     for repo in repos:
-        out = scan_repo(repo, longest)
+        out = scan_repo(options.branch,
+                        join(options.work, repo[:-4]),
+                        join(options.central, repo), longest)
         if out:
             print out
 
