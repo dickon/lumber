@@ -8,16 +8,6 @@ from math import floor, log10
 from subprocess import Popen, PIPE
 from lumber.options import read_options
 
-def sigfigs(num, sig_figs):
-    if num != 0:
-        x = round(num, -int(floor(log10(abs(num))) - (sig_figs - 1)))
-        if x == int(x):
-            return str(int(x))
-        else:
-            return str(x)
-    else:
-        return 0  # Can't take the log of 0
-
 def search_back(repo, predicate, start, limit=None):
     for depth, entry in enumerate(repo.get_walker(max_entries=limit,
                                                   include=[start])):
