@@ -51,5 +51,9 @@ Dependencies
  * python (developed on Python 2.6)
  * dulwich from http://www.samba.org/~jelmer/dulwich/
 
+Ideas for future development
+============================
 
+ * Add a lumber-do command which will run a git command in each repository,
+   e.g. "lumber-do pull"
 
