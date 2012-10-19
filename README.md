@@ -12,7 +12,6 @@ Example output
                                   blktap (up to date)
                            build-scripts unpulled=9
                                     docs unpulled=72
-                                  icbinn (up to date)
                                      idl unpulled=3
                                    input unpulled=2
                                installer unpulled=8
@@ -26,7 +25,6 @@ Example output
                              sync-server (up to date)
                           toolstack-data unpulled=9
                                toolstack unpulled=5
-                                     v4v (up to date)
  
 
 
