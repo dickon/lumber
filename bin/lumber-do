@@ -4,7 +4,7 @@ from subprocess import call
 from lumber.options import read_options
 from lumber.traverse import traverse_local
 
-options, args = read_options()
+options, args, _ = read_options()
 for work_repo, _ in traverse_local(options.work, options.central):
     code = call(args, cwd=work_repo.path)
     if code != 0:

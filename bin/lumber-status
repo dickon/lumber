@@ -61,7 +61,7 @@ def scan_repo(branch, work_repo, central_repo, longest=32):
         out += 'unpushed='+str(unpushed)+ ' '
     return out
 
-options, _ = read_options()
+options, _, _ = read_options()
 if options.central is None:
     print >>stderr, 'ERROR: no central repository directory; configure with -c or config file'
     exit(1)
