@@ -10,7 +10,9 @@ OPTIONS = [('w', 'work', 'paths', getcwd(), 'DIRECTORY',
            ('c', 'central', 'paths', None, 'DIRECTORY',
             """Central repositories are in DIRECTORY."""),
            ('b', 'branch', 'general', 'master', 'BRANCH', 'Look at BRANCH.'),
-           ('v', 'verbose', 'general', False, 'BOOLEAN', 'Show debug output.')]
+           ('v', 'verbose', 'general', False, 'BOOLEAN', 'Show debug output.'),
+           (None, 'pull_format', 'gitrefs', None, 'FORMAT', 'Format for clone URL'),
+           (None, 'push_format', 'gitrefs', None, 'FORMAT', 'Format for push URL')]
 
 def read_options():
     """Read options"""
@@ -29,10 +31,13 @@ def read_options():
                 cdefault = config.get(section, option)
         except (NoOptionError, NoSectionError):
             cdefault = default
-        parser.add_option('-'+short, '--'+option, dest=option,
-                          action=action,
-                          default=cdefault, metavar=metavar,
-                          help=helptext + sectiontext)
+        argl = []
+        if short:
+            argl.append ('-'+short)
+        argl.append('--'+option.replace('_', '-'))
+        argk = {'action':action, 'default':cdefault, 'metavar':metavar, 
+                'help':helptext+sectiontext}
+        parser.add_option(*argl, **argk)
     options, args = parser.parse_args()
     return options, args, config
 
