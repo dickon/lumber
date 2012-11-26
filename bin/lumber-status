@@ -8,6 +8,9 @@ from subprocess import Popen, PIPE
 from lumber.options import read_options
 from lumber.traverse import traverse_local
 
+class Failure(Exception):
+    """A subprocess failed"""
+
 def search_back(repo, predicate, start, limit=None):
     for depth, entry in enumerate(repo.get_walker(max_entries=limit,
                                                   include=[start])):
@@ -23,6 +26,14 @@ def run_no_check(command, cwd=None):
     """Run command in cwd, return stdout. Ignore non-zero exit codes"""
     process = Popen(command, cwd=cwd, stdout=PIPE)
     stdout, _ = process.communicate()
+    return stdout
+
+def run_check(command, cwd=None):
+    """Run command in cwd, return stdout. Fail on non-zero exit codes"""
+    process = Popen(command, cwd=cwd, stdout=PIPE)
+    stdout, _ = process.communicate()
+    if process.returncode != 0:
+        raise Failure(command, process.returncode)
     return stdout
 
 def scan_repo(branch, work_repo, central_repo, longest=32):
@@ -59,6 +70,10 @@ def scan_repo(branch, work_repo, central_repo, longest=32):
     unpushed = search_back(work_repo, lambda x: x in central_repo, lmaster)
     if unpushed:
         out += 'unpushed='+str(unpushed)+ ' '
+    # it would be preferable to use dulwich to extract current branch but I don't know how
+    for line in run_check(['git', 'branch']).split('\n'):
+        if line.startswith('* '):
+            out += 'branch='+line[2:]
     return out
 
 options, _, _ = read_options()
