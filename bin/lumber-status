@@ -11,10 +11,14 @@ from lumber.traverse import traverse_local
 class Failure(Exception):
     """A subprocess failed"""
 
-def search_back(repo, predicate, start, limit=None):
+def search_back(repo, predicate, start, limit=None, description='search back',
+                verbose=False):
     for depth, entry in enumerate(repo.get_walker(max_entries=limit,
                                                   include=[start])):
-        if predicate(entry.commit.id):
+        conc = predicate(entry.commit.id)
+        if verbose:
+            print description, 'ACCEPT' if conc else 'REJECT', entry.commit.id, entry.commit.author
+        if conc:
             return depth
     return 'many'
 
@@ -45,13 +49,13 @@ def scan_repo(branch, work_repo, central_repo, longest=32):
     :param longest: assume at most this many characaters in the repository
     """
     try:
-        master = central_repo[central_repo.ref('refs/heads/'+branch)]
+        head = central_repo[central_repo.ref('refs/heads/'+branch)]
     except KeyError:
         return
     out = pad(split(work_repo.path)[1], longest)+ ' '
-    lmaster = work_repo.ref('refs/heads/'+branch)
-    unpulled = search_back(central_repo, lambda x: x in work_repo, master.id,
-                           limit=longest)
+    lhead = work_repo.ref('refs/heads/'+branch)
+    unpulled = search_back(central_repo, lambda x: x in work_repo, head.id,
+                           limit=longest, description='looking for unpulled')
     if not unpulled:
         out += '(up to date) '
     else:
@@ -67,7 +71,9 @@ def scan_repo(branch, work_repo, central_repo, longest=32):
     
     if changes:
         out += 'staged_files=%d ' % (len(changes))
-    unpushed = search_back(work_repo, lambda x: x in central_repo, lmaster)
+        
+    unpushed = search_back(work_repo, lambda x: x == head.id, lhead,
+                           description='looking for unpushed')
     if unpushed:
         out += 'unpushed='+str(unpushed)+ ' '
     # it would be preferable to use dulwich to extract current branch but I don't know how
