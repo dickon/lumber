@@ -6,6 +6,8 @@ from lumber.traverse import traverse_local
 
 options, args, _ = read_options()
 for work_repo, _ in traverse_local(options.work, options.central):
+    if options.verbose:
+        print 'in '+work_repo.path
     code = call(args, cwd=work_repo.path)
     if code != 0:
        print 'ERROR: failed in', work_repo.path
